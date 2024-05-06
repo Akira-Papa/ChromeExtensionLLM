@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "Claude Send",
+  "version": "1.0",
+  "description": "選択したテキストをClaude AIに送信し、様々な処理を行います。",
+  "icons": {
+    "16": "icons/llm-akirapapa-chrome-16.png",
+    "48": "icons/llm-akirapapa-chrome-48.png",
+    "128": "icons/llm-akirapapa-chrome-128.png"
+  },
+  "permissions": [
+    "contextMenus",
+    "activeTab",
+    "tabs",
+    "scripting",
+    "storage"
+  ],
+  "background": {
+    "service_worker": "scripts/background.js"
+  },
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "host_permissions": [
+    "https://claude.ai/*"
+  ]
+}
