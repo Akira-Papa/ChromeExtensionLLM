@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Claude Send",
   "version": "1.0",
-  "description": "選択したテキストをClaude AIに送信し、様々な処理を行います。",
+  "description": "選択したテキストを様々なLLMサービスへ右クリックで簡易的に送信し、様々な処理を行います",
   "icons": {
     "16": "icons/llm-akirapapa-chrome-16.png",
     "48": "icons/llm-akirapapa-chrome-48.png",
@@ -22,6 +22,7 @@
     "default_popup": "popup.html"
   },
   "host_permissions": [
-    "https://claude.ai/*"
+    "https://claude.ai/*",
+    "https://chatgpt.com/*"
   ]
 }
