@@ -21,7 +21,7 @@ git clone https://github.com/Akira-Papa/ChromeExtensionLLM.git
 
 ### 2. Chromeに拡張機能を追加
 1. Chromeを開き、右上のメニューから「その他のツール」>「拡張機能」を選択します。
- ・ChromeブラウザのURLに以下を記入
+ （ChromeブラウザのURLに以下を記入でも可）
    ```
    chrome://extensions/
    ```
