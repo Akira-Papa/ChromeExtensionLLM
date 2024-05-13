@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Claude Send",
+  "name": "LLM Send",
   "version": "2.0",
   "description": "選択したテキストを様々なLLMサービスへ右クリックで簡易的に送信し、様々な処理を行います",
   "icons": {
