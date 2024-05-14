@@ -1,8 +1,8 @@
 
 
-# Claude Send Chrome拡張機能
+# LLM Send Chrome拡張機能
 
-Claude Sendは、選択したテキストを様々なLLMサービスへ右クリックで簡易的に送信し、様々な処理を行うことができるChrome拡張機能です。
+LLM Sendは、選択したテキストを様々なLLMサービスへ右クリックで簡易的に送信し、様々な処理を行うことができるChrome拡張機能です。
 
 ## 機能
 - 選択したテキストをClaudeやChatGPTへ送信
