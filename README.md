@@ -5,7 +5,7 @@
 LLM Sendは、選択したテキストを様々なLLMサービスへ右クリックで簡易的に送信し、様々な処理を行うことができるChrome拡張機能です。
 
 ## 機能
-- 選択したテキストをClaudeやChatGPTへ送信
+- 選択したテキストをClaudeやChatGPT、Google AI Studio(Gemini)へ送信
 - カスタムメニュー項目の追加と編集
 - コンテキストメニューから直接LLMサービスへの送信サポート
 
@@ -32,12 +32,15 @@ git clone https://github.com/Akira-Papa/ChromeExtensionLLM.git
 これで、Chromeの拡張機能バーに新しいアイコンが表示され、拡張機能が使用可能になります。
 
 ## 使用方法
-- テキストを選択し、右クリックメニューから「Claudeへ送信」または「ChatGPTへ送信」を選択します。
-- ポップアップから新しいメニュー項目を追加、編集、削除できます。
+- テキストを選択し、右クリックメニューから「Claudeへ送信」または「ChatGPTへ送信」「Geminiへ送信」を選択します。
+- ポップアップから新しいメニュー項目を追加、編集、削除、順番変更できます。
+- プロンプトのリストをファイルとしてエクスポートしたり、ファイルからインポートできます。
+
 
 ## 開発者向け情報
 - 主要なスクリプト: `scripts/background.js`
-- ポップアップUI: `popup.html` と `styles.css`
+- ポップアップUI: `popup.html` `popup.js` `styles.css`
+- 初期プロンプト: `prompts.json`
 - 拡張機能の設定: `manifest.json`
 
 ## ライセンス

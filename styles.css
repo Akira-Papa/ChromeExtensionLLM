@@ -21,16 +21,16 @@ h1 {
 }
 
 .menu-items-wrapper {
-  margin-bottom: 20px;
+  display: flex;
 }
 
 .button-container {
   display: flex;
-  justify-content: space-between;
   gap: 10px;
 }
 
-.add-button, .load-button, .save-button, .save-to-file-button {
+.add-button, .load-button, .save-button, .save-to-file-button, .reorder-button,
+.confirm-reorder-button {
   flex: 1;
   padding: 10px;
   font-size: 16px;
@@ -43,9 +43,24 @@ h1 {
 .load-button, .save-to-file-button {
   background-color: #28a745;
 }
-
 .add-button, .save-button {
   background-color: #007bff;
+}
+.reorder-button, .confirm-reorder-button {
+  background-color: #28a745;
+}
+
+.move-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.move-up, .move-down {
+  background-color: #6c757d;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
 }
 
 .menu-item {
@@ -98,3 +113,4 @@ footer {
   font-size: 14px;
   margin: 0;
 }
+

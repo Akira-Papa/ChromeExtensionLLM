@@ -13,12 +13,14 @@
     <h1>あきらパパのLLM Chrome拡張</h1>
     <div class="menu-items-wrapper">
       <button id="add-item" class="add-button">新規追加</button>
-      <div id="menu-items"></div>
+      <button id="reorderButton" class="reorder-button">順番変更</button> <!-- 順番変更ボタン追加 -->
+      <button id="confirmReorderButton" class="confirm-reorder-button" style="display:none;">順番確定</button> <!-- 確定ボタン追加 -->
     </div>
+    <div id="menu-items"></div>
     <footer>
       <button id="saveButton" class="save-button">保存</button>
       <button id="exportButton" class="export-button">エクスポート</button> <!-- エクスポートボタン追加 -->
-      <!-- button id="importButton" class="import-button">インポート</button --> <!-- インポートボタン追加 -->
+      <button id="importButton" class="import-button">インポート</button> <!-- インポートボタン追加 -->
       <p id="statusMessage" class="status-message"></p>
     </footer>
   </div>
