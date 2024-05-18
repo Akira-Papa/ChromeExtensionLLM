@@ -1,3 +1,47 @@
+/**
+ * llmConfigsは、各LLM（大規模言語モデル）の設定を保持するオブジェクトです。
+ * 新たなLLMを追加する際には、以下の形式に従って設定を追加してください。
+ * 
+ * 各LLMの設定には以下のプロパティが含まれます:
+ * - url: LLMのチャットページのURL
+ * - textAreaSelector: メッセージを入力するテキストエリアのCSSセレクタ
+ * - enterKeyConfig: メッセージ送信に使用するEnterキーの設定
+ * - specialPasteFunction: （オプション）特別な貼り付け機能を実装する関数
+ */
+const llmConfigs = {
+    claude: {
+        url: 'https://claude.ai/chats',
+        textAreaSelector: 'div[contenteditable="true"].ProseMirror',
+        enterKeyConfig: { key: 'Enter', keyCode: 13, bubbles: true },
+        specialPasteFunction: async function (message, textAreaSelector) {
+            const textArea = document.querySelector(textAreaSelector);
+            if (textArea) {
+                textArea.focus();
+                const pElement = textArea.querySelector('p');
+                if (pElement) {
+                    pElement.textContent = message;
+                    pElement.dispatchEvent(new Event('input', { bubbles: true }));
+                    return true;
+                }
+            }
+            return false;
+        }
+    },
+    chatgpt: {
+        url: 'https://chat.openai.com/',
+        textAreaSelector: '#prompt-textarea',
+        enterKeyConfig: { key: 'Enter', keyCode: 13, bubbles: true },
+    },
+    gemini: {
+        url: 'https://aistudio.google.com/app/prompts/new_chat',
+        textAreaSelector: 'textarea[placeholder="Type something"]',
+        enterKeyConfig: { key: 'Enter', keyCode: 13, ctrlKey: true, bubbles: true },
+    },
+};
+
+/**
+ * 拡張機能がインストールされたときに、既存の設定を読み込んでコンテキストメニューを作成する関数。
+ */
 chrome.runtime.onInstalled.addListener(async function () {
     // 拡張機能がインストールされたときに、既存の設定を読み込んでコンテキストメニューを作成する
     chrome.storage.local.get('menuItems', async (data) => {
@@ -12,7 +56,14 @@ chrome.runtime.onInstalled.addListener(async function () {
     });
 });
 
-// メッセージリスナーを追加して、メニュー更新を処理する
+/**
+ * メッセージリスナーを追加して、メニュー更新を処理する関数。
+ * 受信したメッセージに基づいてコンテキストメニューを更新する。
+ * 
+ * @param {Object} request - 受信したメッセージの内容。
+ * @param {Object} sender - メッセージを送信したオブジェクト。
+ * @param {Function} sendResponse - レスポンスを送信するためのコールバック関数。
+ */
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     console.log('メッセージを受信しました:', request); // デバッグ用ログ
     if (request.action === 'updateContextMenus') {
@@ -21,55 +72,44 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 });
 
-// コンテキストメニューを作成する関数
+/**
+ * 指定されたメニューアイテムに基づいて、コンテキストメニューを作成する関数。
+ * 既存のコンテキストメニューをすべて削除し、新しいメニューを作成する。
+ * 
+ * @param {Array} menuItems - 作成するメニューアイテムの配列。
+ */
+// Start of Selection
 function createContextMenus(menuItems) {
     // 既存のコンテキストメニューをすべて削除
     chrome.contextMenus.removeAll(() => {
-        // 親メニューを作成
-        chrome.contextMenus.create({
-            id: 'myClaudeExtension',
-            title: 'Claudeへ送信',
-            contexts: ['selection'],
-        })
-
-        chrome.contextMenus.create({
-            id: 'myChatGPTExtension',
-            title: 'ChatGPTへ送信',
-            contexts: ['selection'],
-        })
-
-        chrome.contextMenus.create({
-            id: 'myGeminiExtension',
-            title: 'Geminiへ送信',
-            contexts: ['selection'],
-        })
-        
-        // 設定に基づいて子メニューを作成
-        menuItems.forEach((item, index) => {
+        // llmConfigsの各キーに対して処理を行う
+        Object.keys(llmConfigs).forEach(llm => {
+            // 各LLM用の親メニューを作成
             chrome.contextMenus.create({
-                id: `claude-menu-item-${index}`,
-                title: item.name,
-                parentId: 'myClaudeExtension',
+                id: `my${llm.charAt(0).toUpperCase() + llm.slice(1)}Extension`,
+                title: `${llm.charAt(0).toUpperCase() + llm.slice(1)}へ送信`,
                 contexts: ['selection'],
-            })
+            });
 
-            chrome.contextMenus.create({
-                id: `chatgpt-menu-item-${index}`,
-                title: item.name,
-                parentId: 'myChatGPTExtension',
-                contexts: ['selection'],
-            })
-            chrome.contextMenus.create({
-                id: `gemini-menu-item-${index}`,
-                title: item.name,
-                parentId: 'myGeminiExtension',
-                contexts: ['selection'],
-            })
-        })
-    })
+            // 各メニューアイテムを親メニューの子として作成
+            menuItems.forEach((item, index) => {
+                chrome.contextMenus.create({
+                    id: `${llm}-menu-item-${index}`,
+                    title: item.name,
+                    parentId: `my${llm.charAt(0).toUpperCase() + llm.slice(1)}Extension`,
+                    contexts: ['selection'],
+                });
+            });
+        });
+    });
 }
 
-// 設定が変更された場合に、コンテキストメニューを再作成する
+/**
+ * 設定が変更された場合に、コンテキストメニューを再作成するリスナーを追加する。
+ * 
+ * @param {Object} changes - 変更されたストレージデータ。
+ * @param {string} namespace - 変更が発生したストレージの名前空間。
+ */
 chrome.storage.onChanged.addListener((changes, namespace) => {
     if (namespace === 'local' && changes.menuItems) {
         const menuItems = changes.menuItems.newValue
@@ -77,66 +117,29 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
     }
 })
 
-const llmConfigs = {
-    claude: {
-        url: 'https://claude.ai/chats',
-        textAreaSelector: 'div[contenteditable="true"].ProseMirror',
-        enterKeyConfig: {
-            key: 'Enter',
-            keyCode: 13,
-            bubbles: true,
-        },
-        specialPasteFunction: async function (message, textAreaSelector) {
-            const textArea = document.querySelector(textAreaSelector);
-            if (textArea) {
-                textArea.focus();
-                const pElement = textArea.querySelector('p');
-                if (pElement) {
-                    pElement.textContent = message;
-                    pElement.dispatchEvent(new Event('input', { bubbles: true }));
-                    console.log('テキストエリアへのメッセージのペーストが成功しました。');
-                    return true;
-                } else {
-                    console.warn('テキストエリア内の<p>要素が見つかりませんでした。');
-                    return false;
-                }
-            } else {
-                console.warn('テキストエリアが見つかりませんでした。');
-                return false;
-            }
-        }
-    },
-    chatgpt: {
-        url: 'https://chat.openai.com/',
-        textAreaSelector: '#prompt-textarea',
-        enterKeyConfig: {
-            key: 'Enter',
-            keyCode: 13,
-            bubbles: true,
-        },
-    },
-    gemini: {
-        url: 'https://aistudio.google.com/app/prompts/new_chat',
-        textAreaSelector: 'textarea[placeholder="Type something"]',
-        enterKeyConfig: {
-            key: 'Enter',
-            keyCode: 13,
-            ctrlKey: true, // Ctrl+Enterで「Run」ボタン押下
-            bubbles: true,
-        },
-    },
-};
 
-
+/**
+ * 指定されたタブのテキストエリアにメッセージをペーストし、Enterキーを押して送信する関数。
+ * 
+ * @param {number} tabId - メッセージを送信するタブのID。
+ * @param {string} message - テキストエリアにペーストするメッセージ。
+ * @param {Object} config - テキストエリアのセレクタ、Enterキーの設定、リトライ回数、リトライ間隔、特別なペースト関数を含む設定オブジェクト。
+ * @param {string} config.textAreaSelector - テキストエリアを特定するためのCSSセレクタ。
+ * @param {Object} config.enterKeyConfig - Enterキーのイベント設定。
+ * @param {number} [config.maxRetries=3] - メッセージのペーストと送信を試みる最大回数。
+ * @param {number} [config.retryDelay=1000] - リトライ間隔（ミリ秒）。
+ * @param {Function} [config.specialPasteFunction] - 特別なペースト関数（オプション）。
+ */
 async function pasteAndSendMessage(tabId, message, config) {
+    // 設定オブジェクトから必要なパラメータを取得
     const { textAreaSelector, enterKeyConfig, maxRetries = 3, retryDelay = 1000, specialPasteFunction } = config;
     let retries = 0;
 
+    // 最大試行回数までメッセージのペーストと送信を試行
     while (retries < maxRetries) {
         try {
-            console.log(
-                `試行回数 ${retries + 1} / ${maxRetries}: メッセージをテキストエリアにペーストする処理を開始します。`
-            );
+            console.log(`試行回数 ${retries + 1} / ${maxRetries}: メッセージをテキストエリアにペーストする処理を開始します。`);
+            
             // テキストエリアにメッセージをペースト
             await chrome.scripting.executeScript({
                 target: { tabId: tabId },
@@ -161,6 +164,7 @@ async function pasteAndSendMessage(tabId, message, config) {
             await new Promise((resolve) => setTimeout(resolve, 500));
 
             console.log('Enterキーを押してメッセージの送信を試みます。');
+            
             // Enterキーを押してメッセージを送信
             await chrome.scripting.executeScript({
                 target: { tabId: tabId },
@@ -169,9 +173,7 @@ async function pasteAndSendMessage(tabId, message, config) {
                         console.log('テキストエリアを探しています...');
                         const textArea = document.querySelector(textAreaSelector);
                         if (textArea) {
-                            textArea.dispatchEvent(
-                                new KeyboardEvent('keydown', enterKeyConfig)
-                            );
+                            textArea.dispatchEvent(new KeyboardEvent('keydown', enterKeyConfig));
                             console.log('Enterキーのイベントが正常に発火しました。メッセージの送信を試みました。');
                             return true;
                         } else {
@@ -200,28 +202,29 @@ async function pasteAndSendMessage(tabId, message, config) {
     console.error(`最大試行回数 ${maxRetries} を超えました。メッセージの貼り付けと送信に失敗しました。`);
 }
 
-
+/**
+ * コンテキストメニューがクリックされたときに呼び出されるリスナー関数。
+ * 選択されたメニューアイテムIDと選択されたテキストを取得する。
+ *
+ * @param {Object} info - コンテキストメニューのクリック情報。
+ * @param {Object} tab - クリックされたタブの情報。
+ */
 chrome.contextMenus.onClicked.addListener(async function (info, tab) {
+    // メニューアイテムIDと選択されたテキストを取得
     const menuItemId = info.menuItemId;
     const selectedText = info.selectionText;
 
-    // クリックされたメニューが拡張機能のものであるかをチェック
-    if (
-        menuItemId.startsWith('claude-menu-item-') ||
-        menuItemId.startsWith('chatgpt-menu-item-') ||
-        menuItemId.startsWith('gemini-menu-item-')
-    ) {
+    // 選択されたメニューアイテムに対応するLLMを特定
+    const llm = Object.keys(llmConfigs).find(llm => menuItemId.startsWith(`${llm}-menu-item-`));
+    if (llm) {
+        // メニューアイテムのインデックスを取得
         const index = parseInt(menuItemId.split('-')[3]);
-
-        // 設定からプロンプトを取得
-        const { menuItems } = await new Promise((resolve) => {
-            chrome.storage.local.get('menuItems', resolve);
-        });
-
+        // ストレージからメニューアイテムを取得
+        const { menuItems } = await new Promise(resolve => chrome.storage.local.get('menuItems', resolve));
         const prompt = menuItems[index].prompt;
         const message = `${prompt}:\n${selectedText}`;
 
-        // メッセージをクリップボードにコピー
+        // クリップボードにメッセージをコピー
         await chrome.scripting.executeScript({
             target: { tabId: tab.id },
             func: async function (message) {
@@ -231,22 +234,12 @@ chrome.contextMenus.onClicked.addListener(async function (info, tab) {
             world: 'MAIN',
         });
 
-        let llmConfig;
-        if (menuItemId.startsWith('claude-menu-item-')) {
-            llmConfig = llmConfigs.claude;
-        } else if (menuItemId.startsWith('chatgpt-menu-item-')) {
-            llmConfig = llmConfigs.chatgpt;
-        } else {
-            llmConfig = llmConfigs.gemini;
-        }
+        // LLMの設定を取得し、新しいタブを開く
+        const llmConfig = llmConfigs[llm];
+        const newTab = await new Promise(resolve => chrome.tabs.create({ url: llmConfig.url }, resolve));
 
-        // 新しいタブでLLMを開く
-        const newTab = await new Promise((resolve) => {
-            chrome.tabs.create({ url: llmConfig.url }, resolve);
-        });
-
-        // 新しいタブが完全に読み込まれるまで待機
-        await new Promise((resolve) => {
+        // 新しいタブが完全に読み込まれるのを待つ
+        await new Promise(resolve => {
             chrome.tabs.onUpdated.addListener(function listener(tabId, info) {
                 if (tabId === newTab.id && info.status === 'complete') {
                     chrome.tabs.onUpdated.removeListener(listener);
@@ -255,8 +248,8 @@ chrome.contextMenus.onClicked.addListener(async function (info, tab) {
             });
         });
 
-        // 貼り付けスクリプトを実行
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        // 1秒待機してからメッセージを貼り付けて送信
+        await new Promise(resolve => setTimeout(resolve, 1000));
         await pasteAndSendMessage(newTab.id, message, llmConfig);
     }
 });
