@@ -24,6 +24,7 @@
   "host_permissions": [
     "https://claude.ai/*",
     "https://chatgpt.com/*",
-    "https://aistudio.google.com/*"
+    "https://aistudio.google.com/*",
+    "https://www.perplexity.ai/*"
   ]
 }

@@ -1,4 +1,4 @@
-/**
+/*
  * llmConfigsは、各LLM（大規模言語モデル）の設定を保持するオブジェクトです。
  * 新たなLLMを追加する際には、以下の形式に従って設定を追加してください。
  * 
@@ -7,6 +7,8 @@
  * - textAreaSelector: メッセージを入力するテキストエリアのCSSセレクタ
  * - enterKeyConfig: メッセージ送信に使用するEnterキーの設定
  * - specialPasteFunction: （オプション）特別な貼り付け機能を実装する関数
+ * 
+ * manifest.jsonの"host_permissions"へURLの登録も必要です。忘れないで。
  */
 const llmConfigs = {
     claude: {
@@ -37,9 +39,14 @@ const llmConfigs = {
         textAreaSelector: 'textarea[placeholder="Type something"]',
         enterKeyConfig: { key: 'Enter', keyCode: 13, ctrlKey: true, bubbles: true },
     },
+    perplexity: {
+        url: 'https://www.perplexity.ai/',
+        textAreaSelector: 'textarea[placeholder]',
+        enterKeyConfig: { key: 'Enter', keyCode: 13, bubbles: true },
+    },
 };
 
-/**
+/*
  * 拡張機能がインストールされたときに、既存の設定を読み込んでコンテキストメニューを作成する関数。
  */
 chrome.runtime.onInstalled.addListener(async function () {
@@ -56,7 +63,7 @@ chrome.runtime.onInstalled.addListener(async function () {
     });
 });
 
-/**
+/*
  * メッセージリスナーを追加して、メニュー更新を処理する関数。
  * 受信したメッセージに基づいてコンテキストメニューを更新する。
  * 
@@ -72,7 +79,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 });
 
-/**
+/*
  * 指定されたメニューアイテムに基づいて、コンテキストメニューを作成する関数。
  * 既存のコンテキストメニューをすべて削除し、新しいメニューを作成する。
  * 
@@ -104,7 +111,7 @@ function createContextMenus(menuItems) {
     });
 }
 
-/**
+/*
  * 設定が変更された場合に、コンテキストメニューを再作成するリスナーを追加する。
  * 
  * @param {Object} changes - 変更されたストレージデータ。
@@ -202,7 +209,7 @@ async function pasteAndSendMessage(tabId, message, config) {
     console.error(`最大試行回数 ${maxRetries} を超えました。メッセージの貼り付けと送信に失敗しました。`);
 }
 
-/**
+/*
  * コンテキストメニューがクリックされたときに呼び出されるリスナー関数。
  * 選択されたメニューアイテムIDと選択されたテキストを取得する。
  *
