@@ -44,6 +44,16 @@ const llmConfigs = {
         textAreaSelector: 'textarea[placeholder]',
         enterKeyConfig: { key: 'Enter', keyCode: 13, bubbles: true },
     },
+    grok: {
+        url: 'https://x.com/i/grok',
+        textAreaSelector: 'textarea[GrowingTextArea]',
+        enterKeyConfig: { key: 'Enter', keyCode: 13, bubbles: true },
+    },
+    poe: {
+        url: 'https://poe.com/',
+        textAreaSelector: 'textarea[placeholder]',
+        enterKeyConfig: { key: 'Enter', keyCode: 13, bubbles: true },
+    },
 };
 
 /*

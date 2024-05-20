@@ -25,6 +25,8 @@
     "https://claude.ai/*",
     "https://chatgpt.com/*",
     "https://aistudio.google.com/*",
-    "https://www.perplexity.ai/*"
-  ]
+    "https://www.perplexity.ai/*",
+    "https://poe.com/*",
+    "https://x.com/i/grok/*"
+    ]
 }
