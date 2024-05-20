@@ -35,6 +35,24 @@ const llmConfigs = {
         enterKeyConfig: { key: 'Enter', keyCode: 13, bubbles: true },
     },
     gemini: {
+        url: 'https://gemini.google.com/app',
+        textAreaSelector: 'div[aria-label]',
+        enterKeyConfig: { key: 'Enter', keyCode: 13, bubbles: true },
+        specialPasteFunction: async function (message, textAreaSelector) {
+            const textArea = document.querySelector(textAreaSelector);
+            if (textArea) {
+                textArea.focus();
+                const pElement = textArea.querySelector('p');
+                if (pElement) {
+                    pElement.textContent = message;
+                    pElement.dispatchEvent(new Event('input', { bubbles: true }));
+                    return true;
+                }
+            }
+            return false;
+        }
+    },
+    aistudio: {
         url: 'https://aistudio.google.com/app/prompts/new_chat',
         textAreaSelector: 'textarea[placeholder="Type something"]',
         enterKeyConfig: { key: 'Enter', keyCode: 13, ctrlKey: true, bubbles: true },
