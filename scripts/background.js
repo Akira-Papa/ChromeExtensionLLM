@@ -79,6 +79,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 });
 
+
 /*
  * 指定されたメニューアイテムに基づいて、コンテキストメニューを作成する関数。
  * 既存のコンテキストメニューをすべて削除し、新しいメニューを作成する。
@@ -95,6 +96,14 @@ function createContextMenus(menuItems) {
             chrome.contextMenus.create({
                 id: `my${llm.charAt(0).toUpperCase() + llm.slice(1)}Extension`,
                 title: `${llm.charAt(0).toUpperCase() + llm.slice(1)}へ送信`,
+                contexts: ['selection'],
+            });
+
+            // 「開く」メニューアイテムを親メニューの子として作成
+            chrome.contextMenus.create({
+                id: `${llm}-menu-item-open`,
+                title: '開く',
+                parentId: `my${llm.charAt(0).toUpperCase() + llm.slice(1)}Extension`,
                 contexts: ['selection'],
             });
 
@@ -138,17 +147,15 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
  * @param {Function} [config.specialPasteFunction] - 特別なペースト関数（オプション）。
  */
 async function pasteAndSendMessage(tabId, message, config) {
-    // 設定オブジェクトから必要なパラメータを取得
     const { textAreaSelector, enterKeyConfig, maxRetries = 3, retryDelay = 1000, specialPasteFunction } = config;
     let retries = 0;
 
-    // 最大試行回数までメッセージのペーストと送信を試行
     while (retries < maxRetries) {
         try {
             console.log(`試行回数 ${retries + 1} / ${maxRetries}: メッセージをテキストエリアにペーストする処理を開始します。`);
-            
+
             // テキストエリアにメッセージをペースト
-            await chrome.scripting.executeScript({
+            const pasteResult = await chrome.scripting.executeScript({
                 target: { tabId: tabId },
                 func: specialPasteFunction || async function (message, textAreaSelector) {
                     const textArea = document.querySelector(textAreaSelector);
@@ -167,34 +174,44 @@ async function pasteAndSendMessage(tabId, message, config) {
                 world: 'MAIN',
             });
 
+            if (!pasteResult[0].result) {
+                throw new Error('テキストエリアへのペーストに失敗しました。');
+            }
+
             console.log('メッセージをペーストした後、500ミリ秒待機しています。');
             await new Promise((resolve) => setTimeout(resolve, 500));
 
-            console.log('Enterキーを押してメッセージの送信を試みます。');
-            
-            // Enterキーを押してメッセージを送信
-            await chrome.scripting.executeScript({
-                target: { tabId: tabId },
-                func: async function (textAreaSelector, enterKeyConfig) {
-                    try {
-                        console.log('テキストエリアを探しています...');
-                        const textArea = document.querySelector(textAreaSelector);
-                        if (textArea) {
-                            textArea.dispatchEvent(new KeyboardEvent('keydown', enterKeyConfig));
-                            console.log('Enterキーのイベントが正常に発火しました。メッセージの送信を試みました。');
-                            return true;
-                        } else {
-                            console.warn('メッセージの送信に必要なテキストエリアが見つかりませんでした。');
+            if (enterKeyConfig) {
+                console.log('Enterキーを押してメッセージの送信を試みます。');
+
+                // Enterキーを押してメッセージを送信
+                const sendResult = await chrome.scripting.executeScript({
+                    target: { tabId: tabId },
+                    func: async function (textAreaSelector, enterKeyConfig) {
+                        try {
+                            console.log('テキストエリアを探しています...');
+                            const textArea = document.querySelector(textAreaSelector);
+                            if (textArea) {
+                                textArea.dispatchEvent(new KeyboardEvent('keydown', enterKeyConfig));
+                                console.log('Enterキーのイベントが正常に発火しました。メッセージの送信を試みました。');
+                                return true;
+                            } else {
+                                console.warn('メッセージの送信に必要なテキストエリアが見つかりませんでした。');
+                                return false;
+                            }
+                        } catch (error) {
+                            console.error('エラーが発生しました:', error);
                             return false;
                         }
-                    } catch (error) {
-                        console.error('エラーが発生しました:', error);
-                        return false;
-                    }
-                },
-                args: [textAreaSelector, enterKeyConfig],
-                world: 'MAIN',
-            });
+                    },
+                    args: [textAreaSelector, enterKeyConfig],
+                    world: 'MAIN',
+                });
+
+                if (!sendResult[0].result) {
+                    throw new Error('メッセージの送信に失敗しました。');
+                }
+            }
 
             console.log('メッセージの送信処理が完了しました。処理を終了します。');
             return;
@@ -224,39 +241,44 @@ chrome.contextMenus.onClicked.addListener(async function (info, tab) {
     // 選択されたメニューアイテムに対応するLLMを特定
     const llm = Object.keys(llmConfigs).find(llm => menuItemId.startsWith(`${llm}-menu-item-`));
     if (llm) {
-        // メニューアイテムのインデックスを取得
-        const index = parseInt(menuItemId.split('-')[3]);
-        // ストレージからメニューアイテムを取得
-        const { menuItems } = await new Promise(resolve => chrome.storage.local.get('menuItems', resolve));
-        const prompt = menuItems[index].prompt;
-        const message = `${prompt}:\n${selectedText}`;
-
-        // クリップボードにメッセージをコピー
-        await chrome.scripting.executeScript({
-            target: { tabId: tab.id },
-            func: async function (message) {
-                await navigator.clipboard.writeText(message);
-            },
-            args: [message],
-            world: 'MAIN',
-        });
-
-        // LLMの設定を取得し、新しいタブを開く
-        const llmConfig = llmConfigs[llm];
-        const newTab = await new Promise(resolve => chrome.tabs.create({ url: llmConfig.url }, resolve));
-
-        // 新しいタブが完全に読み込まれるのを待つ
-        await new Promise(resolve => {
-            chrome.tabs.onUpdated.addListener(function listener(tabId, info) {
-                if (tabId === newTab.id && info.status === 'complete') {
-                    chrome.tabs.onUpdated.removeListener(listener);
-                    resolve();
-                }
+        if (menuItemId.endsWith('-open')) {
+            const llmConfig = llmConfigs[llm];
+            const newTab = await new Promise(resolve => chrome.tabs.create({ url: llmConfig.url }, resolve));
+            await new Promise(resolve => {
+                chrome.tabs.onUpdated.addListener(function listener(tabId, info) {
+                    if (tabId === newTab.id && info.status === 'complete') {
+                        chrome.tabs.onUpdated.removeListener(listener);
+                        resolve();
+                    }
+                });
             });
-        });
-
-        // 1秒待機してからメッセージを貼り付けて送信
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        await pasteAndSendMessage(newTab.id, message, llmConfig);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            await pasteAndSendMessage(newTab.id, selectedText, { ...llmConfig, enterKeyConfig: null });
+        } else {
+            const index = parseInt(menuItemId.split('-')[3]);
+            const { menuItems } = await new Promise(resolve => chrome.storage.local.get('menuItems', resolve));
+            const prompt = menuItems[index].prompt;
+            const message = `${prompt}:\n${selectedText}`;
+            await chrome.scripting.executeScript({
+                target: { tabId: tab.id },
+                func: async function (message) {
+                    await navigator.clipboard.writeText(message);
+                },
+                args: [message],
+                world: 'MAIN',
+            });
+            const llmConfig = llmConfigs[llm];
+            const newTab = await new Promise(resolve => chrome.tabs.create({ url: llmConfig.url }, resolve));
+            await new Promise(resolve => {
+                chrome.tabs.onUpdated.addListener(function listener(tabId, info) {
+                    if (tabId === newTab.id && info.status === 'complete') {
+                        chrome.tabs.onUpdated.removeListener(listener);
+                        resolve();
+                    }
+                });
+            });
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            await pasteAndSendMessage(newTab.id, message, llmConfig);
+        }
     }
 });

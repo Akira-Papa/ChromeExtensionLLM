@@ -5,11 +5,22 @@
 document.addEventListener('DOMContentLoaded', () => {
     const menuItemsContainer = document.getElementById('menu-items') // メニュー項目を格納するコンテナ要素を取得
     const addItemButton = document.getElementById('add-item') // 項目追加ボタンを取得
-    const saveButton = document.getElementById('saveButton') // 保存ボタンを取得
+    // const saveButton = document.getElementById('saveButton') // 保存ボタンを取得
     const statusMessage = document.getElementById('statusMessage') // ステータスメッセージ要素を取得
     // const updateMenuButton = document.getElementById('updateMenuButton') // メニュー更新ボタン（コメントアウト）
+    const exportButton = document.getElementById('exportButton') // 保存ボタンを取得
+    const importButton = document.getElementById('importButton') // 保存ボタンを取得
     const reorderButton = document.getElementById('reorderButton') // 項目並び替えボタンを取得
     const confirmReorderButton = document.getElementById('confirmReorderButton') // 並び替え確定ボタンを取得
+
+    // メニュー項目の変更を監視し、自動保存する
+    menuItemsContainer.addEventListener('input', () => {
+        const menuItems = getMenuItemsFromUI()
+        chrome.storage.local.set({ menuItems }, () => {
+            statusMessage.textContent = '自動保存されました。'
+            statusMessage.style.color = 'green'
+        })
+    })
 
     /**
      * 設定を読み込む関数。
@@ -42,7 +53,6 @@ document.addEventListener('DOMContentLoaded', () => {
         <textarea class="menu-prompt" rows="4" cols="50" placeholder="プロンプト">${prompt}</textarea>
         <button class="remove-item">削除</button>
       `
-
         // メニュー項目をコンテナに追加
         menuItemsContainer.appendChild(menuItem)
     }
@@ -64,46 +74,34 @@ document.addEventListener('DOMContentLoaded', () => {
         // メニュー項目の上移動を処理
         if (event.target.classList.contains('move-up')) {
             const item = event.target.closest('.menu-item')
-            if (item.previousElementSibling) {
+            if (item && item.previousElementSibling) {
                 menuItemsContainer.insertBefore(item, item.previousElementSibling)
             }
+        }
         // メニュー項目の下移動を処理
-        } else if (event.target.classList.contains('move-down')) {
+        if (event.target.classList.contains('move-down')) {
             const item = event.target.closest('.menu-item')
-            if (item.nextElementSibling) {
+            if (item && item.nextElementSibling) {
                 menuItemsContainer.insertBefore(item.nextElementSibling, item)
             }
+        }
         // メニュー項目の削除を処理
-        } else if (event.target.classList.contains('remove-item')) {
-            event.target.closest('.menu-item').remove()
+        if (event.target.classList.contains('remove-item')) {
+            const item = event.target.closest('.menu-item')
+            if (item) {
+                menuItemsContainer.removeChild(item)
+            }
         }
     })
 
-    /**
-     * 設定を保存するイベントリスナー。
-     * 'saveButton'がクリックされたときに、現在のメニュー項目を取得し、ローカルストレージに保存する。
-     */
-    saveButton.addEventListener('click', () => {
-        // メニュー項目を取得し、オブジェクトの配列に変換
-        const menuItems = Array.from(menuItemsContainer.children).map(
-            (item) => ({
-                name: item.querySelector('.menu-name').value,
-                prompt: item.querySelector('.menu-prompt').value,
-            })
-        )
-
-        // メニュー項目をローカルストレージに保存
-        chrome.storage.local.set({ menuItems }, () => {
-            // 保存処理の結果に応じてステータスメッセージを更新
-            if (chrome.runtime.lastError) {
-                statusMessage.textContent = 'データの保存中にエラーが発生しました。'
-                statusMessage.style.color = 'red'
-            } else {
-                statusMessage.textContent = 'データが正常に保存されました。'
-                statusMessage.style.color = 'green'
-            }
-        })
-    })
+    // 保存ボタンのイベントリスナーを削除
+    // saveButton.addEventListener('click', () => {
+    //     const menuItems = getMenuItemsFromUI()
+    //     chrome.storage.local.set({ menuItems }, () => {
+    //         statusMessage.textContent = '保存されました。'
+    //         statusMessage.style.color = 'green'
+    //     })
+    // })
 
     // メニュー更新ボタンのイベントリスナー
     // デバッグ用
@@ -189,19 +187,13 @@ document.addEventListener('DOMContentLoaded', () => {
      * @returns {Array} メニュー項目のオブジェクト配列
      */
     function getMenuItemsFromUI() {
-        // メニュー項目を格納する配列を初期化
-        const items = []
-        // 各メニュー項目を取得し、配列に追加
-        document.querySelectorAll('.menu-item').forEach((item) => {
-            // メニュー項目の名前を取得
-            const name = item.querySelector('.menu-name').value
-            // メニュー項目のプロンプトを取得
-            const prompt = item.querySelector('.menu-prompt').value
-            // 取得した名前とプロンプトをオブジェクトとして配列に追加
-            items.push({ name, prompt })
-        })
-        // メニュー項目のオブジェクト配列を返却
-        return items
+        const menuItems = Array.from(menuItemsContainer.children).map(
+            (item) => ({
+                name: item.querySelector('.menu-name').value,
+                prompt: item.querySelector('.menu-prompt').value,
+            })
+        )
+        return menuItems
     }
 
     /**

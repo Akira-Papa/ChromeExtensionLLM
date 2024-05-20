@@ -1,29 +1,25 @@
 <!DOCTYPE html>
 <html lang="ja">
 
-<head>
-  <meta charset="UTF-8">
-  <title>あきらパパのLLM Chrome拡張</title>
-  <link rel="stylesheet" type="text/css" href="styles.css">
-  <script defer src="popup.js"></script>
-</head>
+  <head>
+    <meta charset="UTF-8">
+    <title>あきらパパのLLM Chrome拡張</title>
+    <link rel="stylesheet" type="text/css" href="styles.css">
+    <script defer src="popup.js"></script>
+  </head>
 
-<body>
-  <div class="container">
-    <h1>あきらパパのLLM Chrome拡張</h1>
-    <div class="menu-items-wrapper">
-      <button id="add-item" class="add-button">新規追加</button>
-      <button id="reorderButton" class="reorder-button">順番変更</button> <!-- 順番変更ボタン追加 -->
-      <button id="confirmReorderButton" class="confirm-reorder-button" style="display:none;">順番確定</button> <!-- 確定ボタン追加 -->
+  <body>
+    <div class="container">
+      <h1>あきらパパのLLM Chrome拡張</h1>
+      <div class="menu-items-wrapper">
+        <button id="add-item" class="add-button">新規追加</button>
+        <button id="reorderButton" class="reorder-button">順番変更</button> <!-- 順番変更ボタン追加 -->
+        <button id="confirmReorderButton" class="confirm-reorder-button" style="display:none;">順番確定</button> <!-- 確定ボタン追加 -->
+        <button id="exportButton" class="export-button">エクスポート</button> <!-- エクスポートボタン追加 -->
+        <button id="importButton" class="import-button">インポート</button> <!-- インポートボタン追加 -->
+        <p id="statusMessage" class="status-message"></p>
+      </div>
+      <div id="menu-items"></div>
     </div>
-    <div id="menu-items"></div>
-    <footer>
-      <button id="saveButton" class="save-button">保存</button>
-      <button id="exportButton" class="export-button">エクスポート</button> <!-- エクスポートボタン追加 -->
-      <button id="importButton" class="import-button">インポート</button> <!-- インポートボタン追加 -->
-      <p id="statusMessage" class="status-message"></p>
-    </footer>
-  </div>
-</body>
-
+  </body>
 </html>
