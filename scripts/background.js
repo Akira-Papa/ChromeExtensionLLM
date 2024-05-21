@@ -267,11 +267,15 @@ chrome.contextMenus.onClicked.addListener(async function (info, tab) {
     const selectedText = info.selectionText;
 
     // 選択されたメニューアイテムに対応するLLMを特定
+    // 選択されたメニューアイテムに対応するLLMを特定
     const llm = Object.keys(llmConfigs).find(llm => menuItemId.startsWith(`${llm}-menu-item-`));
     if (llm) {
         if (menuItemId.endsWith('-open')) {
+            // 「開く」メニューアイテムが選択された場合の処理
             const llmConfig = llmConfigs[llm];
+            // 新しいタブを作成してLLMのURLを開く
             const newTab = await new Promise(resolve => chrome.tabs.create({ url: llmConfig.url }, resolve));
+            // 新しいタブが完全に読み込まれるまで待機
             await new Promise(resolve => {
                 chrome.tabs.onUpdated.addListener(function listener(tabId, info) {
                     if (tabId === newTab.id && info.status === 'complete') {
@@ -280,13 +284,21 @@ chrome.contextMenus.onClicked.addListener(async function (info, tab) {
                     }
                 });
             });
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            // 2秒待機（ページの読み込みを確実にするため）
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            // 選択されたテキストを貼り付けて送信
             await pasteAndSendMessage(newTab.id, selectedText, { ...llmConfig, enterKeyConfig: null });
         } else {
+            // プロンプト付きのメニューアイテムが選択された場合の処理
+            // メニューアイテムのインデックスを取得
             const index = parseInt(menuItemId.split('-')[3]);
+            // ストレージからメニューアイテムを取得
             const { menuItems } = await new Promise(resolve => chrome.storage.local.get('menuItems', resolve));
+            // 選択されたメニューアイテムのプロンプトを取得
             const prompt = menuItems[index].prompt;
+            // プロンプトと選択されたテキストを組み合わせてメッセージを作成
             const message = `${prompt}:\n${selectedText}`;
+            // 現在のタブでメッセージをクリップボードにコピー
             await chrome.scripting.executeScript({
                 target: { tabId: tab.id },
                 func: async function (message) {
@@ -295,8 +307,11 @@ chrome.contextMenus.onClicked.addListener(async function (info, tab) {
                 args: [message],
                 world: 'MAIN',
             });
+            // LLMの設定を取得
             const llmConfig = llmConfigs[llm];
+            // 新しいタブを作成してLLMのURLを開く
             const newTab = await new Promise(resolve => chrome.tabs.create({ url: llmConfig.url }, resolve));
+            // 新しいタブが完全に読み込まれるまで待機
             await new Promise(resolve => {
                 chrome.tabs.onUpdated.addListener(function listener(tabId, info) {
                     if (tabId === newTab.id && info.status === 'complete') {
@@ -305,8 +320,10 @@ chrome.contextMenus.onClicked.addListener(async function (info, tab) {
                     }
                 });
             });
+            // 1秒待機（ページの読み込みを確実にするため）
             await new Promise(resolve => setTimeout(resolve, 1000));
-            await pasteAndSendMessage(newTab.id, message, llmConfig);
+            // メッセージを貼り付けて送信（選択されたテキストがある場合は設定を調整）
+            await pasteAndSendMessage(newTab.id, message, selectedText ? llmConfig : { ...llmConfig, enterKeyConfig: null });
         }
     }
 });
