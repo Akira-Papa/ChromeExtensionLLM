@@ -17,9 +17,8 @@ document.addEventListener('DOMContentLoaded', () => {
     menuItemsContainer.addEventListener('input', () => {
         const menuItems = getMenuItemsFromUI()
         chrome.storage.local.set({ menuItems }, () => {
-            statusMessage.textContent = '自動保存されました。'
-            statusMessage.style.color = 'green'
-        })
+            showStatusMessage('自動保存されました。');
+        });
     })
 
     /**
@@ -144,7 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // 作成したURLを解放
             URL.revokeObjectURL(url)
             // ステータスメッセージを更新
-            document.getElementById('statusMessage').textContent = 'エクスポートされました。'
+            showStatusMessage('エクスポートされました。');
         })
     })
 
@@ -164,13 +163,35 @@ document.addEventListener('DOMContentLoaded', () => {
             const reader = new FileReader()
             // ファイルの読み込みが完了したときの処理を設定
             reader.onload = function (e) {
-                const menuItems = JSON.parse(e.target.result)
-                // メニュー項目をローカルストレージに保存
-                chrome.storage.local.set({ menuItems: menuItems }, function () {
-                    console.log('メニュー項目がインポートされました。')
-                    document.getElementById('statusMessage').textContent = 'インポートされました。'
-                    // メニューを再作成
-                    createContextMenus(menuItems)
+                const importedMenuItems = JSON.parse(e.target.result)
+                chrome.storage.local.get('menuItems', function (data) {
+                    const existingMenuItems = data.menuItems || []
+                    const mergedMenuItems = existingMenuItems.slice()
+        
+                    importedMenuItems.forEach(importedItem => {
+                        const existingItem = existingMenuItems.find(item =>
+                            item.name === importedItem.name && item.prompt === importedItem.prompt
+                        )
+                        if (!existingItem) {
+                            // 既存のメニュー項目と名前とプロンプトが完全に一致しない場合は、新しいメニュー項目として追加
+                            mergedMenuItems.push(importedItem)
+                        }
+                    })
+        
+                    chrome.storage.local.set({ menuItems: mergedMenuItems }, function () {
+                        console.log('メニュー項目がインポートされました。')
+                        showStatusMessage('インポートされました。');
+                        // メニューを再作成
+                        createContextMenus(mergedMenuItems)
+                        // 既存のメニュー項目を削除
+                        while (menuItemsContainer.firstChild) {
+                            menuItemsContainer.removeChild(menuItemsContainer.firstChild)
+                        }
+                        // マージしたメニュー項目を追加
+                        mergedMenuItems.forEach(item => {
+                            addMenuItem(item.name, item.prompt)
+                        })
+                    })
                 })
             }
             // ファイルをテキストとして読み込む
@@ -228,11 +249,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const menuItems = getMenuItemsFromUI()
         // メニュー項目をストレージに保存し、メニューを再作成
         chrome.storage.local.set({ menuItems }, () => {
-            createContextMenus(menuItems)
-            // ステータスメッセージを更新
-            statusMessage.textContent = '順番が更新されました。'
-            statusMessage.style.color = 'green'
-        })
+            createContextMenus(menuItems);
+            showStatusMessage('順番が更新されました。');
+        });
         // ボタンの表示状態を更新
         reorderButton.style.display = 'block'
         confirmReorderButton.style.display = 'none'
@@ -265,3 +284,13 @@ document.addEventListener('DOMContentLoaded', () => {
         menuItemsContainer.appendChild(menuItem)
     }
 });
+
+function clearStatusMessage() {
+    statusMessage.textContent = '';
+}
+
+function showStatusMessage(message, color = 'green') {
+    statusMessage.textContent = message;
+    statusMessage.style.color = color;
+    setTimeout(clearStatusMessage, 3000);
+}
