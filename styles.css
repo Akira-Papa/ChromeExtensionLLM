@@ -107,14 +107,17 @@ h1 {
 
 footer {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-top: 20px;
+  justify-content: left;
+  align-items: left;
+  padding: 10px;
+  background-color: #ffffff;
   border-top: 1px solid #eeeeee;
+  position: fixed;
+  bottom: 0;
+  width: 100%;
 }
 
 .status-message {
   font-size: 14px;
   margin: 0;
 }
-

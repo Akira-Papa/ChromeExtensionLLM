@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const importButton = document.getElementById('importButton') // 保存ボタンを取得
     const reorderButton = document.getElementById('reorderButton') // 項目並び替えボタンを取得
     const confirmReorderButton = document.getElementById('confirmReorderButton') // 並び替え確定ボタンを取得
-
+    console.log("開きました")
     // メニュー項目の変更を監視し、自動保存する
     menuItemsContainer.addEventListener('input', () => {
         const menuItems = getMenuItemsFromUI()
@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
             showStatusMessage('自動保存されました。');
         });
     })
+    console.log("メニュー作りました")
 
     /**
      * 設定を読み込む関数。
@@ -34,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
             addMenuItem(item.name, item.prompt)
         })
     })
-
+    console.log("コンテキストメニュー更新しました")
     /**
      * 項目を追加する関数。
      * メニュー項目の名前とプロンプトを受け取り、新しいメニュー項目を作成してコンテナに追加する。
@@ -45,7 +46,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // 新しいメニュー項目のコンテナ要素を作成
         const menuItem = document.createElement('div')
         menuItem.classList.add('menu-item')
-
+        console.debug("HTML追加します")
+    
         // メニュー項目のHTMLを設定
         menuItem.innerHTML = `
         <input type="text" class="menu-name" value="${name}" placeholder="メニュー名">
@@ -54,8 +56,22 @@ document.addEventListener('DOMContentLoaded', () => {
       `
         // メニュー項目をコンテナに追加
         menuItemsContainer.appendChild(menuItem)
-    }
+        console.debug("HTML追加しました")
 
+        // 新規追加の場合、追加された要素にスクロールしてフォーカスを当てる
+        if (name == '' && prompt == '') {
+            requestAnimationFrame(() => {
+                setTimeout(() => {
+                    const menuNameInput = menuItem.querySelector('.menu-name')
+                    menuNameInput.scrollIntoView({ behavior: 'smooth' })
+                    menuNameInput.focus()
+                }, 100)
+            })
+            console.debug("スクロールしました")
+            showStatusMessage('プロンプトを入力して下さい。');
+        }
+    }
+    
     /**
      * 項目を追加するイベントリスナーを設定する。
      * 'add-item'ボタンがクリックされたときに、新しいメニュー項目を追加する。
@@ -259,31 +275,7 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.style.display = 'none'
         })
     })
-
-    /**
-     * 新しいメニュー項目をユーザーインターフェースに追加する関数。
-     * 
-     * @param {string} name - メニュー項目の名前（デフォルトは空文字列）。
-     * @param {string} prompt - メニュー項目のプロンプト（デフォルトは空文字列）。
-     */
-    function addMenuItem(name = '', prompt = '') {
-        // 新しいメニュー項目のコンテナ要素を作成
-        const menuItem = document.createElement('div')
-        menuItem.classList.add('menu-item')
-        // メニュー項目のHTML内容を設定
-        menuItem.innerHTML = `
-        <input type="text" class="menu-name" value="${name}" placeholder="メニュー名">
-        <textarea class="menu-prompt" rows="4" cols="50" placeholder="プロンプト">${prompt}</textarea>
-        <button class="remove-item">削除</button>
-        <div class="move-buttons" style="display:none;">
-            <button class="move-up">↑</button>
-            <button class="move-down">↓</button>
-        </div>
-      `
-        // メニュー項目をコンテナに追加
-        menuItemsContainer.appendChild(menuItem)
-    }
-});
+}); 
 
 function clearStatusMessage() {
     statusMessage.textContent = '';
