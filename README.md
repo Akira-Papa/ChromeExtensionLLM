@@ -12,6 +12,7 @@ LLM Sendは、選択したテキストを様々なLLMサービスへ右クリッ
     - Google Gemini
     - Google AI Studio
     - Perplexity
+    - X Grok
     - Poe
 - カスタムメニュー項目の追加と編集、削除、順番変更
 - プロンプトリストのインポート・エクスポート
