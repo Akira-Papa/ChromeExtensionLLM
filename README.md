@@ -20,7 +20,7 @@ LLM Sendは、選択したテキストを様々なLLMサービスへ右クリッ
 ### 1. Zipファイルのダウンロード
 - 次のURLからダウンロード
 ```
-https://drive.google.com/open?id=1XaxYzRwTeBUp0Z9NHN1Tgm7o6uCEmTR9&usp=drive_fs
+https://bit.ly/llm_send/
 ```
 - LLM-extention-2.zip というファイルがダウンロードされます。
 
