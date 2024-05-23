@@ -22,7 +22,7 @@ LLM Sendは、選択したテキストを様々なLLMサービスへ右クリッ
 ```
 https://bit.ly/llm_send/
 ```
-- LLM-extention-2.zip というファイルがダウンロードされます。
+- LLM-send-chrome-extention-2.zip というファイルがダウンロードされます。
 
 ### 2. Zipファイルの展開
 
