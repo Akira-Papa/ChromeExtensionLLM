@@ -1,6 +1,6 @@
 # LLM Send Chrome拡張機能
 
-LLM Sendは、選択したテキストを様々なLLMサービスへ右クリックで簡単に送信し、様々な処理を行うことができるChrome拡張機能です。Edgeでも利用できます。
+LLM Sendは、選択したテキストを様々なLLM（大規模言語モデル、ChatGPTなどのいわゆる生成AI）サービスへ右クリックで簡単に送信し、様々な処理を行うことができるChrome拡張機能です。Edgeでも利用できます。
 
 ## 機能
 - 選択したテキストにプロンプトを添えてClaudeやChatGPT、GeminiなどLLMへ送信
@@ -19,9 +19,9 @@ LLM Sendは、選択したテキストを様々なLLMサービスへ右クリッ
 
 ### 1. Zipファイルのダウンロード
 - 次のURLからダウンロード
-```
-https://bit.ly/llm_send/
-```
+  ```
+  https://bit.ly/llm_send/
+  ```
 - LLM-send-chrome-extention-2.zip というファイルがダウンロードされます。
 
 ### 2. Zipファイルの展開

@@ -64,7 +64,7 @@ const llmConfigs = {
     },
     grok: {
         url: 'https://x.com/i/grok',
-        textAreaSelector: 'textarea[GrowingTextArea]',
+        textAreaSelector: 'textarea[placeholder]',
         enterKeyConfig: { key: 'Enter', keyCode: 13, bubbles: true },
     },
     poe: {
@@ -208,6 +208,10 @@ async function pasteAndSendMessage(tabId, message, config) {
 
             console.log('メッセージをペーストした後、500ミリ秒待機しています。');
             await new Promise((resolve) => setTimeout(resolve, 500));
+            
+            if(navigator.clipboard){
+                navigator.clipboard.writeText(message);
+            }
 
             if (enterKeyConfig) {
                 console.log('Enterキーを押してメッセージの送信を試みます。');
