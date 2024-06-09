@@ -61,11 +61,13 @@ const llmConfigs = {
         url: 'https://www.perplexity.ai/',
         textAreaSelector: 'textarea[placeholder]',
         enterKeyConfig: { key: 'Enter', keyCode: 13, bubbles: true },
+        submitButtonSelector: 'button[type="submit"]', // 追加
     },
     grok: {
         url: 'https://x.com/i/grok',
         textAreaSelector: 'textarea[placeholder]',
-        enterKeyConfig: { key: 'Enter', keyCode: 13, bubbles: true },
+        enterKeyConfig: { key: 'Enter', keyCode: 13, code: 'Enter', which: 13, bubbles: true, cancelable: true },
+        submitButtonSelector: 'button[aria-disabled]', // 追加
     },
     poe: {
         url: 'https://poe.com/',
@@ -175,7 +177,7 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
  * @param {Function} [config.specialPasteFunction] - 特別なペースト関数（オプション）。
  */
 async function pasteAndSendMessage(tabId, message, config) {
-    const { textAreaSelector, enterKeyConfig, maxRetries = 3, retryDelay = 1000, specialPasteFunction } = config;
+    const { textAreaSelector, enterKeyConfig, submitButtonSelector, maxRetries = 3, retryDelay = 1000, specialPasteFunction } = config;
     let retries = 0;
 
     while (retries < maxRetries) {
@@ -191,6 +193,7 @@ async function pasteAndSendMessage(tabId, message, config) {
                         textArea.focus();
                         textArea.value = message;
                         textArea.dispatchEvent(new Event('input', { bubbles: true }));
+                        textarea.dispatchEvent(new Event('change', { bubbles: true })); //効果なし
                         console.log('テキストエリアへのメッセージのペーストが成功しました。');
                         return true;
                     } else {
@@ -206,14 +209,51 @@ async function pasteAndSendMessage(tabId, message, config) {
                 throw new Error('テキストエリアへのペーストに失敗しました。');
             }
 
+            // クリップボードにメッセージをコピーします。
+            if (navigator.clipboard) {
+                await navigator.clipboard.writeText(message);
+            }
+            
             console.log('メッセージをペーストした後、500ミリ秒待機しています。');
             await new Promise((resolve) => setTimeout(resolve, 500));
-            
-            if(navigator.clipboard){
-                navigator.clipboard.writeText(message);
-            }
 
-            if (enterKeyConfig) {
+            if (submitButtonSelector) {
+                console.log('送信ボタンをクリックしてメッセージの送信を試みます。');
+
+                // 送信ボタンをクリックしてメッセージを送信
+                const sendResult = await chrome.scripting.executeScript({
+                    target: { tabId: tabId },
+                    func: async function (submitButtonSelector) {
+                        try {
+                            console.log('送信ボタンを探しています...');
+                            const submitButton = document.querySelector(submitButtonSelector);
+                            const textArea = document.querySelector(textAreaSelector);
+                            if (submitButton) {
+                                submitButton.disabled = false; //効果なし
+                                submitButton.click(); //効果なし
+                                if (textArea) {
+                                    textArea.dispatchEvent(new KeyboardEvent('keydown', enterKeyConfig));
+                                    //効果なし
+                                }
+                                console.log('送信ボタンのクリックが成功しました。メッセージの送信を試みました。');
+                                return true;
+                            } else {
+                                console.warn('送信ボタンが見つかりませんでした。');
+                                return false;
+                            }
+                        } catch (error) {
+                            console.error('エラーが発生しました:', error);
+                            return false;
+                        }
+                    },
+                    args: [submitButtonSelector],
+                    world: 'MAIN',
+                });
+
+                if (!sendResult[0].result) {
+                    throw new Error('メッセージの送信に失敗しました。');
+                }
+            } else if (enterKeyConfig) {
                 console.log('Enterキーを押してメッセージの送信を試みます。');
 
                 // Enterキーを押してメッセージを送信
